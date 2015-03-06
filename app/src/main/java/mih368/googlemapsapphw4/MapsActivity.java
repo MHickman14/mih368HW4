@@ -52,6 +52,7 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.Key;
 import com.google.maps.android.PolyUtil;
 
+import android.util.Log;
 
 
 
@@ -66,6 +67,8 @@ public class MapsActivity extends FragmentActivity {
     private List<LatLng> latLngs = new ArrayList<LatLng>();
     private GoogleMap googleMap;
     private List<Marker> markers = new ArrayList<Marker>();
+    public static final String TAG = MapsActivity.class.getSimpleName();
+
 
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
@@ -163,28 +166,10 @@ public class MapsActivity extends FragmentActivity {
         EditText editText = (EditText) findViewById(R.id.edit_message);
         String message = editText.getText().toString();
         LocationParser parser = new LocationParser();
+        Log.d(TAG, ("Send messge has been called and is delivering this address: " + message));
         parser.execute(message);
     }
 
-
-    public static class PlacesResult {
-
-        @Key("geometry")
-        public String predictions;
-
-    }
-
-    public static class Prediction {
-        @Key("location")
-        public String location;
-
-        @Key("lat")
-        public double lat;
-
-        @Key("lng")
-        public double lng;
-
-    }
 
     private class LocationParser extends AsyncTask<String, Void, Void> {
 
@@ -201,12 +186,14 @@ public class MapsActivity extends FragmentActivity {
 
                 GenericUrl url = new GenericUrl(PLACES_API_BASE);
                 url.put("address", strings[0]);
+                Log.d(TAG, ("LocationParser has been called and is delivering this url: " + url.toString()));
 
                 HttpRequest request = requestFactory.buildGetRequest(url);
                 HttpResponse httpResponse = request.execute();
                 Results directionsResult = httpResponse.parseAs(Results.class);
                 if (directionsResult.results.size() > 0){
                     coors = new LatLng(directionsResult.results.get(0).location.coordinates.lat,directionsResult.results.get(0).location.coordinates.lng);
+                    Log.d(TAG, ("Addresses have been found at these coordinates: " + coors.toString()));
                 }
 
 

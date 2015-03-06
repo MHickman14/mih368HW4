@@ -1,15 +1,72 @@
 package mih368.googlemapsapphw4;
 
+import android.content.Context;
+import android.content.Intent;
+import android.os.AsyncTask;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.app.Activity;
+import android.util.Log;
+import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.Filter;
+import android.widget.Filterable;
+import android.widget.TextView;
+
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.api.client.extensions.android.http.AndroidHttp;
+import com.google.api.client.http.GenericUrl;
+import com.google.api.client.http.HttpRequest;
+import com.google.api.client.http.HttpRequestFactory;
+import com.google.api.client.http.HttpRequestInitializer;
+import com.google.api.client.http.HttpResponse;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.json.JsonFactory;
+import com.google.api.client.json.JsonObjectParser;
+import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.util.Key;
+import com.google.maps.android.PolyUtil;
+
+
+
 
 public class MapsActivity extends FragmentActivity {
+
+    public final static String EXTRA_MESSAGE = "com.mycompany.myfirstapp.MESSAGE";
+    static final HttpTransport HTTP_TRANSPORT = AndroidHttp.newCompatibleTransport();
+    static final JsonFactory JSON_FACTORY = new JacksonFactory();
+    static final String PLACES_API_KEY = "AIzaSyAcFgy4B0e7cpOOihtKQPVmI46MliDtdCY";
+    static final String PLACES_API_BASE = "https://maps.googleapis.com/maps/api/geocode/json?";
+    private LatLng coors;
+    private List<LatLng> latLngs = new ArrayList<LatLng>();
+    private GoogleMap googleMap;
+    private List<Marker> markers = new ArrayList<Marker>();
+
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
 
@@ -26,6 +83,9 @@ public class MapsActivity extends FragmentActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+        setUpMapIfNeeded();
+
+
     }
 
     @Override
@@ -33,8 +93,6 @@ public class MapsActivity extends FragmentActivity {
         super.onResume();
         setUpMapIfNeeded();
     }
-
-
 
 
     /**
@@ -56,7 +114,7 @@ public class MapsActivity extends FragmentActivity {
         // Do a null check to confirm that we have not already instantiated the map.
         if (mMap == null) {
             // Try to obtain the map from the SupportMapFragment.
-            mMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
+            mMap = ((MapFragment) getFragmentManager().findFragmentById(R.id.map))
                     .getMap();
             // Check if we were successful in obtaining the map.
             if (mMap != null) {
@@ -74,4 +132,123 @@ public class MapsActivity extends FragmentActivity {
     private void setUpMap() {
         mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
     }
+
+
+    private void addMarkerToMap(LatLng latLng) {
+        Marker marker = googleMap.addMarker(new MarkerOptions().position(latLng)
+                .title("title")
+                .snippet("snippet"));
+        markers.add(marker);
+
+    }
+
+    /**
+     * Adds a list of markers to the map.
+     */
+    public void addMarkersToMap(List<LatLng> latLngs) {
+        for (LatLng latLng : latLngs) {
+            addMarkerToMap(latLng);
+        }
+    }
+
+    /**
+     * Clears all markers from the map.
+     */
+    public void clearMarkers() {
+        googleMap.clear();
+        markers.clear();
+    }
+
+    public void sendMessage(View view) {
+        EditText editText = (EditText) findViewById(R.id.edit_message);
+        String message = editText.getText().toString();
+        LocationParser parser = new LocationParser();
+        parser.execute(message);
+    }
+
+
+    public static class PlacesResult {
+
+        @Key("geometry")
+        public String predictions;
+
+    }
+
+    public static class Prediction {
+        @Key("location")
+        public String location;
+
+        @Key("lat")
+        public double lat;
+
+        @Key("lng")
+        public double lng;
+
+    }
+
+    private class LocationParser extends AsyncTask<String, Void, Void> {
+
+        private List<LatLng> latLngs = new ArrayList<LatLng>();
+
+        protected Void doInBackground(String... strings) {
+            try {
+                HttpRequestFactory requestFactory = HTTP_TRANSPORT.createRequestFactory(new HttpRequestInitializer() {
+                    @Override
+                    public void initialize(HttpRequest request) {
+                        request.setParser(new JsonObjectParser(JSON_FACTORY));
+                    }
+                });
+
+                GenericUrl url = new GenericUrl(PLACES_API_BASE);
+                url.put("address", strings[0]);
+
+                HttpRequest request = requestFactory.buildGetRequest(url);
+                HttpResponse httpResponse = request.execute();
+                Results directionsResult = httpResponse.parseAs(Results.class);
+                if (directionsResult.results.size() > 0){
+                    coors = new LatLng(directionsResult.results.get(0).location.coordinates.lat,directionsResult.results.get(0).location.coordinates.lng);
+                }
+
+
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+            return null;
+        }
+
+        protected void onProgressUpdate(Integer... progress) {
+        }
+
+
+        protected void onPostExecute(Void stupidvariable) {
+            clearMarkers();
+            mMap.addMarker(new MarkerOptions().position(coors).title("Location"));
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(coors,15));
+        }
+    }
+
+    public static class Results{
+        @Key("results")
+        public List<Geometry> results;
+    }
+    public static class Geometry {
+        @Key("geometry")
+        public  Location location;
+    }
+
+    public static class Location{
+        @Key("location")
+        public Coordinates coordinates;
+    }
+
+    public static class Coordinates{
+        @Key("lat")
+        public double lat;
+
+        @Key("lng")
+        public double lng;
+    }
 }
+
+

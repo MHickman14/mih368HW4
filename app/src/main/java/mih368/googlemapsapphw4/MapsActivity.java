@@ -85,6 +85,7 @@ public class MapsActivity extends FragmentActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.i("MapsActivity", ("logging enabled"));
         setContentView(R.layout.activity_maps);
         setUpMapIfNeeded();
 
@@ -166,7 +167,7 @@ public class MapsActivity extends FragmentActivity {
         EditText editText = (EditText) findViewById(R.id.edit_message);
         String message = editText.getText().toString();
         LocationParser parser = new LocationParser();
-        Log.d(TAG, ("Send messge has been called and is delivering this address: " + message));
+        Log.i("MapsActivity", ("Send messge has been called and is delivering this address: " + message));
         parser.execute(message);
     }
 
@@ -195,6 +196,10 @@ public class MapsActivity extends FragmentActivity {
                     coors = new LatLng(directionsResult.results.get(0).location.coordinates.lat,directionsResult.results.get(0).location.coordinates.lng);
                     Log.d(TAG, ("Addresses have been found at these coordinates: " + coors.toString()));
                 }
+                else
+                {
+                    Log.i(TAG, ("No address has been found"));
+                }
 
 
 
@@ -209,7 +214,6 @@ public class MapsActivity extends FragmentActivity {
 
 
         protected void onPostExecute(Void stupidvariable) {
-            clearMarkers();
             mMap.addMarker(new MarkerOptions().position(coors).title("Location"));
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(coors,15));
         }

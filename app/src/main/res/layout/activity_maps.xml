@@ -24,7 +24,7 @@
         android:layout_height="wrap_content"
         android:text="@string/button_send"
         android:layout_below="@+id/edit_message"
-        android:layout_toRightOf="@+id/edit_message" />
+        android:layout_toRightOf="@+id/edit_message"
         android:onClick="sendMessage"/>
 
 </RelativeLayout>

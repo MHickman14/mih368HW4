@@ -187,14 +187,14 @@ public class MapsActivity extends FragmentActivity {
 
                 GenericUrl url = new GenericUrl(PLACES_API_BASE);
                 url.put("address", strings[0]);
-                Log.d(TAG, ("LocationParser has been called and is delivering this url: " + url.toString()));
+                Log.i(TAG, ("LocationParser has been called and is delivering this url: " + url.toString()));
 
                 HttpRequest request = requestFactory.buildGetRequest(url);
                 HttpResponse httpResponse = request.execute();
                 Results directionsResult = httpResponse.parseAs(Results.class);
                 if (directionsResult.results.size() > 0){
                     coors = new LatLng(directionsResult.results.get(0).location.coordinates.lat,directionsResult.results.get(0).location.coordinates.lng);
-                    Log.d(TAG, ("Addresses have been found at these coordinates: " + coors.toString()));
+                    Log.i(TAG, ("Addresses have been found at these coordinates: " + coors.toString()));
                 }
                 else
                 {
